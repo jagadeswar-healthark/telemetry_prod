@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Telemetry Analysis</title>
+  <link rel="icon" type="image/png" href="{{ url_for('static', filename='Thermo.png') }}">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/vega@5"></script>
+  <script src="https://cdn.jsdelivr.net/npm/vega-lite@5"></script>
+  <script src="https://cdn.jsdelivr.net/npm/vega-embed@6"></script>
+  <!-- Add flatpickr CSS and JS -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+  <style>
+    .stage-box {
+      transition: opacity 0.5s ease-in-out, transform 0.5s ease-in-out;
+      transform: translateY(10px);
+    }
+    .stage-box.show {
+      opacity: 1 !important;
+      transform: translateY(0);
+    }
+    .stage-arrow {
+      transition: opacity 0.3s ease-in-out;
+    }
+    .stage-arrow.show {
+      opacity: 1 !important;
+    }
+  </style>
+</head>
+<body class="bg-gray-50 text-gray-900">
+  <div class="flex min-h-screen">
+    <!-- Sidebar -->
+    <aside class="w-64 bg-gray-100 flex flex-col items-center p-6 shadow-md fixed h-screen">
+      <img src="{{ url_for('static', filename='logo1.png') }}" alt="Thermo Fisher Logo" class="mb-6 w-48"/>
+      <button id="toggle-upload" class="bg-red-600 hover:bg-red-700 text-white font-semibold py-2 px-4 rounded-full">
+        Show Telemetry Menu
+      </button>
+    </aside>
+
+    <!-- Main content -->
+    <main class="flex-1 p-10 ml-64">
+      <!-- Homepage Image (visible on load) -->
+      <div id="homepage-image" class="flex flex-col items-center justify-center">
+        <img src="{{ url_for('static', filename='Telemetry_Homepage.png') }}" alt="Telemetry Homepage" class="max-w-3xl w-full rounded-2xl shadow-2xl mb-6"/>
+        
+        <!-- Dropdown Section -->
+        <div class="max-w-4xl w-full grid grid-cols-2 gap-4 mb-8 items-start">
+          <!-- How to Use Dropdown -->
+          <details class="bg-white rounded-xl shadow-lg overflow-hidden">
+            <summary class="w-full px-6 py-4 bg-red-50 hover:bg-red-100 text-gray-800 font-semibold flex items-center justify-between cursor-pointer list-none">
+              <span class="flex items-center">
+                <span class="mr-2">✅</span> How to Use the Telemetry Analysis Tool
+              </span>
+              <svg class="summary-arrow h-5 w-5 transform transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+              </svg>
+            </summary>
+            <div class="px-6 py-4 text-gray-700 text-sm">
+              <p class="font-bold mb-2">Upload your Telemetry (PUC) file</p>
+              <ul class="list-disc ml-6 mb-3">
+                <li>Use the upload panel to select a single file at a time.</li>
+              </ul>
+              <p class="font-bold mb-2">The system processes the file automatically</p>
+              <ul class="list-disc ml-6 mb-3">
+                <li>It runs anomaly detection + summary generation.</li>
+              </ul>
+              <p class="font-bold mb-2">View instant results</p>
+              <ul class="list-disc ml-6 mb-3">
+                <li>You will see classification output, detected issues, and a clear explanation of anomalies.</li>
+              </ul>
+              <p class="font-bold mb-2">Download the report</p>
+              <ul class="list-disc ml-6">
+                <li>Get a formatted summary for documentation or sharing.</li>
+              </ul>
+            </div>
+          </details>
+
+          <!-- Key Features Dropdown -->
+          <details class="bg-white rounded-xl shadow-lg overflow-hidden">
+            <summary class="w-full px-6 py-4 bg-red-50 hover:bg-red-100 text-gray-800 font-semibold flex items-center justify-between cursor-pointer list-none">
+              <span class="flex items-center">
+                <span class="mr-2">✅</span> Key Features
+              </span>
+              <svg class="summary-arrow h-5 w-5 transform transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+              </svg>
+            </summary>
+            <div class="px-6 py-4 text-gray-700 text-sm">
+              <p class="font-bold mb-2">AI-Powered Anomaly Detection</p>
+              <ul class="list-disc ml-6 mb-3">
+                <li>Automatically identifies unusual signal behaviors by code.</li>
+              </ul>
+              <p class="font-bold mb-2">Smart Summary Generation</p>
+              <ul class="list-disc ml-6 mb-3">
+                <li>Converts complex telemetry patterns into simple, human-readable text.</li>
+              </ul>
+              <p class="font-bold mb-2">Single-File, Real-Time Processing</p>
+              <ul class="list-disc ml-6 mb-3">
+                <li>Upload one file at a time and get results in seconds.</li>
+              </ul>
+              <p class="font-bold mb-2">Signal-Level Insights</p>
+              <ul class="list-disc ml-6 mb-3">
+                <li>Highlights which parameters contributed to the detected anomaly.</li>
+              </ul>
+              <p class="font-bold mb-2">Clean & Intuitive Interface</p>
+              <ul class="list-disc ml-6 mb-3">
+                <li>Simple upload → instant insights → downloadable report.</li>
+              </ul>
+              <p class="font-bold mb-2">Zero Technical Knowledge Needed</p>
+              <ul class="list-disc ml-6">
+                <li>Designed for both technical and non-technical users.</li>
+              </ul>
+            </div>
+          </details>
+        </div>
+      </div>
+
+      <h1 id="page-title" class="text-3xl font-bold text-red-600 mb-6 text-center hidden">Telemetry Analysis</h1>
+
+      <!-- Upload Form (Hidden Initially) -->
+      <form id="upload-form" class="max-w-4xl mx-auto bg-white rounded-2xl shadow-xl p-5 mb-4 hidden" enctype="multipart/form-data">
+        <!-- Drop Area -->
+        <div id="drop-area" class="relative">
+          <label for="file-upload" class="block w-full cursor-pointer border-2 border-dashed rounded-xl py-4 px-6 flex flex-col items-center justify-center text-gray-500 hover:border-red-500 hover:bg-red-50 transition-all duration-300 ease-in-out" style="border-color: rgba(248, 113, 113, 0.6);">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 mb-2 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+            </svg>
+            <span class="text-sm font-semibold mb-1">Drop your file here or click to browse</span>
+            <span class="text-xs text-gray-400">Supported format: PUC files • Max size: 200MB</span>
+            <input id="file-upload" name="file" type="file" class="hidden" accept=".puc" />
+          </label>
+        </div>
+
+        <!-- File Info Preview -->
+        <div id="file-info" class="mt-3 hidden">
+          <div class="bg-gray-50 rounded-xl p-2.5 flex items-center justify-between border border-gray-200">
+            <div class="flex items-center space-x-2.5">
+              <svg class="h-7 w-7 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+              </svg>
+              <div>
+                <p id="file-name" class="text-xs font-semibold text-gray-800 truncate max-w-md"></p>
+                <p id="file-size" class="text-xs text-gray-500 mt-0.5"></p>
+              </div>
+            </div>
+            <button type="button" onclick="clearFile()" class="text-gray-400 hover:text-red-500 transition-colors">
+              <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+        </div>
+
+        <!-- Success Message -->
+        <div id="success-msg" class="mt-2.5 hidden bg-gradient-to-r from-green-50 to-green-100 text-green-700 px-3 py-2 rounded-xl text-xs font-medium flex items-center">
+          <svg class="h-4 w-4 mr-1.5" fill="currentColor" viewBox="0 0 20 20">
+            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+          </svg>
+          File ready to upload!
+        </div>
+
+        <!-- Submit Button -->
+        <div class="text-center mt-4">
+          <button type="submit" class="bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white font-bold py-2.5 px-8 rounded-full text-sm shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200">
+            Analyze Telemetry
+          </button>
+        </div>
+      </form>
+
+      <!-- Spinner & Results Template -->
+      <div id="processing" class="hidden text-center mt-4">
+        <div class="flex items-center justify-center space-x-4 mb-6">
+          <svg class="animate-spin h-6 w-6 text-red-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"></path>
+          </svg>
+          <p class="text-base text-red-600 font-semibold">
+            Expected Processing Time: <span id="countdown">03:00</span>
+          </p>
+        </div>
+        
+        <!-- Processing Stages -->
+        <div id="processing-stages" class="flex items-center justify-center gap-2 max-w-6xl mx-auto px-4">
+          <div id="stage-1" class="stage-box opacity-0">
+            <div class="bg-white border-2 border-blue-500 rounded-lg px-3 py-2 shadow-md">
+              <p class="text-xs font-semibold text-blue-700 whitespace-nowrap">Actual Values</p>
+            </div>
+          </div>
+          
+          <svg id="arrow-1" class="stage-arrow opacity-0 h-4 w-4 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+          </svg>
+          
+          <div id="stage-2" class="stage-box opacity-0">
+            <div class="bg-white border-2 border-green-500 rounded-lg px-3 py-2 shadow-md">
+              <p class="text-xs font-semibold text-green-700 whitespace-nowrap">Trend Values</p>
+            </div>
+          </div>
+          
+          <svg id="arrow-2" class="stage-arrow opacity-0 h-4 w-4 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+          </svg>
+          
+          <div id="stage-3" class="stage-box opacity-0">
+            <div class="bg-white border-2 border-blue-500 rounded-lg px-3 py-2 shadow-md">
+              <p class="text-xs font-semibold text-blue-700 whitespace-nowrap">Event: Door Opening</p>
+            </div>
+          </div>
+          
+          <svg id="arrow-3" class="stage-arrow opacity-0 h-4 w-4 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+          </svg>
+          
+          <div id="stage-4" class="stage-box opacity-0">
+            <div class="bg-white border-2 border-green-500 rounded-lg px-3 py-2 shadow-md">
+              <p class="text-xs font-semibold text-green-700 whitespace-nowrap">Event: Power Glitch/Failure</p>
+            </div>
+          </div>
+          
+          <svg id="arrow-4" class="stage-arrow opacity-0 h-4 w-4 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+          </svg>
+          
+          <div id="stage-5" class="stage-box opacity-0">
+            <div class="bg-white border-2 border-blue-500 rounded-lg px-3 py-2 shadow-md">
+              <p class="text-xs font-semibold text-blue-700 whitespace-nowrap">Event: Refrigeration Failure</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Results Area -->
+      <div id="results-container" class="hidden mt-10 max-w-3xl mx-auto bg-white border-2 border-red-500 rounded-xl p-6 shadow">
+        <!-- Injected via JS -->
+      </div>
+
+      <div id="charts" class="mt-8">
+        <h2 id="sensor-values-heading" class="text-xl font-bold mb-2 text-red-700 hidden">Sensor Values</h2>
+        <div id="sensor_value"></div>
+        <h2 id="sensor-trends-heading" class="text-xl font-bold mb-2 text-red-700 hidden">Sensor Trends</h2>
+        <div id="sensor_trend"></div>
+        <h2 id="daily-actual-heading" class="text-xl font-bold mb-2 text-red-700 hidden">Daily Actual</h2>
+        <div id="daily_actual"></div>
+        <h2 id="daily-trends-heading" class="text-xl font-bold mb-2 text-red-700 hidden">Daily Trends</h2>
+        <div id="daily_trend"></div>
+        <h2 id="daily-flagged-heading" class="text-xl font-bold mb-2 text-red-700 hidden">Daily Flagged</h2>
+        <div id="daily_flagged"></div>
+        <h2 id="door-events-heading" class="text-xl font-bold mb-2 text-red-700 hidden">Door Events</h2>
+        <div id="door_events"></div>
+      </div>
+
+      <!-- Absolute and Trend Data Tables -->
+      <div id="absolute-table-container" class="hidden mt-8 max-w-3xl mx-auto bg-white border-2 border-blue-500 rounded-xl p-6 shadow">
+        <h2 class="text-xl font-bold mb-2 text-blue-700">Actual Values</h2>
+        <table id="absolute-table" class="table-auto w-full border-collapse border border-gray-300">
+          <thead>
+            <tr id="absolute-table-header" class="bg-gray-100"></tr>
+          </thead>
+          <tbody id="absolute-table-body"></tbody>
+        </table>
+      </div>
+
+      <div id="trend-table-container" class="hidden mt-8 max-w-3xl mx-auto bg-white border-2 border-green-500 rounded-xl p-6 shadow">
+        <h2 class="text-xl font-bold mb-2 text-green-700">Trend Values</h2>
+        <table id="trend-table" class="table-auto w-full border-collapse border border-gray-300">
+          <thead>
+            <tr id="trend-table-header" class="bg-gray-100"></tr>
+          </thead>
+          <tbody id="trend-table-body"></tbody>
+        </table>
+      </div>
+
+      <div id="door-table-container" class="hidden mt-8 max-w-3xl mx-auto bg-white border-2 border-blue-500 rounded-xl p-6 shadow">
+        <h2 class="text-xl font-bold mb-2 text-blue-700">Event: Door Opening</h2>
+        <table id="door-table" class="table-auto w-full border-collapse border border-gray-300">
+          <thead>
+            <tr id="door-table-header" class="bg-gray-100"></tr>
+          </thead>
+          <tbody id="door-table-body"></tbody>
+        </table>
+      </div>
+
+      <div id="power-table-container" class="hidden mt-8 max-w-3xl mx-auto bg-white border-2 border-green-500 rounded-xl p-6 shadow">
+        <h2 class="text-xl font-bold mb-2 text-green-700">Event: Power Glitch/Power Failure Alarm</h2>
+        <table id="power-table" class="table-auto w-full border-collapse border border-gray-300">
+          <thead>
+            <tr id="power-table-header" class="bg-gray-100"></tr>
+          </thead>
+          <tbody id="power-table-body"></tbody>
+        </table>
+      </div>
+
+      <div id="ref-table-container" class="hidden mt-8 max-w-3xl mx-auto bg-white border-2 border-blue-500 rounded-xl p-6 shadow">
+        <h2 class="text-xl font-bold mb-2 text-blue-700">Event: System Refrigeration Failure Alarm</h2>
+        <table id="ref-table" class="table-auto w-full border-collapse border border-gray-300">
+          <thead>
+            <tr id="ref-table-header" class="bg-gray-100"></tr>
+          </thead>
+          <tbody id="ref-table-body"></tbody>
+        </table>
+      </div>
+    </main>
+  </div>
+
+  <!-- Scroll to Top Button -->
+  <button id="scroll-to-top" class="fixed bottom-8 right-8 bg-red-600 hover:bg-red-700 text-white p-3 rounded-full shadow-lg opacity-0 pointer-events-none transition-opacity duration-300 z-50">
+    <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 10l7-7m0 0l7 7m-7-7v18" />
+    </svg>
+  </button>
+
+  <!-- JS Logic -->
+  <script src="static/script.js"></script>
+</body>
+</html>
